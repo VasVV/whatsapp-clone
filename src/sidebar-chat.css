@@ -1,0 +1,35 @@
+.sidebar-chat {
+    background-color: lightgrey;
+    border-bottom: 1px solid black;
+    padding: 10px;
+    display: flex;
+    cursor: pointer;
+}
+
+.sidebar-chat:hover {
+    background-color: white;
+    transition: background 0.5s ease-out ;
+}
+
+.sidebar-chat > h2 {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.sidebar-chat__info {
+    margin-left: 10px;
+}
+
+.sidebar-chat__modal {
+    top: 25vh !important;
+    left: 25vw !important;
+    width: 25vw;
+    height: 25vh;
+    background-color: white;
+    z-index: 99 !important;
+}
+
+a {
+    text-decoration: none;
+    color: inherit
+}

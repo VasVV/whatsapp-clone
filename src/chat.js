@@ -14,14 +14,19 @@ import Picker, { SKIN_TONE_MEDIUM_DARK } from 'emoji-picker-react';
 import {Recorder} from 'react-voice-recorder'
 import 'react-voice-recorder/dist/index.css'
 
+import { useStateValue } from './stateProvider';
+
 
 export default function Chat() {
+
+    const [{user}, dispatch] = useStateValue();
 
     const [message, setMessage] = useState('');
     const [roomName, setRoomName] = useState('');
     const [showPicker, setShowPicker] = useState(false);
     const [audioData, setAudioData] = useState(null);
     const [showRecorder, setShowRecorder] = useState(false);
+    const [messages, setMessages] = useState([]);
   
 
     const inputFile = useRef(null);
@@ -60,6 +65,17 @@ export default function Chat() {
                 userId: 'curruserid',
                 currRoomId: id.roomId
             });
+
+            await db
+            .collection('rooms')
+            .doc(id.roomId)
+            .collection('messages')
+            .add({
+                username: user.displayName,
+                text: imgurl,
+                image: true,
+                time: new Date()
+            })
             
         }
     }
@@ -77,11 +93,22 @@ export default function Chat() {
 
             ref = await store.ref();
 
-            let audiourl = await ref.child(`audio/${name}`).getDownloadURL();
+            let audiourl = await ref.child(`audio/${name}.webm`).getDownloadURL();
             await db.collection('audio').add({
                 audiourl,
                 userId: 'curruserid',
                 currRoomId: id.roomId
+            });
+
+            await db
+            .collection('rooms')
+            .doc(id.roomId)
+            .collection('messages')
+            .add({
+                username: user.displayName,
+                text: audiourl,
+                audio: true,
+                time: new Date()
             })
         
     }
@@ -109,16 +136,46 @@ export default function Chat() {
         .doc(id.roomId)
         .onSnapshot(snapshot => {
             setRoomName(snapshot.data().name)
+        });
+
+        let msg = [];
+        await db
+        .collection('rooms')
+        .doc(id.roomId)
+        .collection('messages')
+        .orderBy('time', 'asc')
+        .onSnapshot(snapshot => {
+            setMessages(snapshot.docs.map(doc => doc.data()))
         })
+        
+        
     }
 
     useEffect(() => {
         if (id) {
         
         uploadMessages();
+
+       
         }
     },[id])
+
+    useEffect(() => {
+        
+    },[id])
     
+
+    const sendMessage = () => {
+        db
+        .collection('rooms')
+        .doc(id.roomId)
+        .collection('messages')
+        .add({
+            username: user.displayName,
+            text: message,
+            time: new Date()
+        })
+    }
 
     return (
         <div className='chat'>
@@ -132,27 +189,51 @@ export default function Chat() {
             
             <AttachFileIcon onClick={() =>  inputFile.current.click()} />
             </div>
-
+            
             <div className='chat__body'>
-                <div className='chat__body__message'>
-                    <span className='chat__body__message__user'>Username</span>
-                   <p className='chat__body__message__message'>Hey 
-                   <span className='chat__body__message__message__timestamp'>12-12-2012 03:03:03</span>
-                   </p> 
-                </div>
-                <div className='chat__body__message'>
-                    <span className='chat__body__message__user'>Username</span>
-                   <p className='chat__body__message__message'>Hey</p> 
-                </div>
-                <div className='chat__body__message'>
-                    <span className='chat__body__message__user'>Username</span>
-                   <p className='chat__body__message__message'>Hey</p> 
-                </div>
-
-                <div className=' chat__reciever chat__body__message '>
-                    <span className='chat__body__message__user'>Username</span>
-                   <p className='chat__reciever__message chat__body__message__message '>Hey</p> 
-                </div>
+            {messages.map(e => {
+                    
+                    if (!e.audio && !e.image) {
+                    return (
+                        
+                        
+                        <div className= {`${user.displayName == e.username && 'chat__reciever' } chat__body__message`}>
+                            <span className='chat__body__message__user'>{e.username}</span>
+                        <p className={e.username == user.displayName ? 'chat__reciever__message chat__body__message__message' : 'chat__body__message__message' }>{e.text}
+                        <span className='chat__body__message__message__timestamp'>{new Date(e['time'] * 1000).toString()}</span>
+                        </p> 
+                        </div>
+                    )
+                    }
+                    else if (e.audio) {
+                        return (
+                            <div className= {`${user.displayName == e.username && 'chat__reciever' } chat__body__message`}>
+                            <span className='chat__body__message__user'>{e.username}</span>
+                        <p className={e.username == user.displayName ? 'chat__reciever__message chat__body__message__message' : 'chat__body__message__message' }>
+                            <audio controls>
+                            <source src={e.text} />
+                            </audio>
+                        <span className='chat__body__message__message__timestamp'>{new Date(e['time'] * 1000).toString()}</span>
+                        </p> 
+                        </div>
+                        )
+                    }
+                    
+                        else if (e.image) {
+                            return (
+                                <div className= {`${user.displayName == e.username && 'chat__reciever' } chat__body__message`}>
+                                <span className='chat__body__message__user'>{e.username}</span>
+                            <p className={e.username == user.displayName ? 'chat__reciever__message chat__body__message__message' : 'chat__body__message__message' }>
+                                <img src={e.text} className='chat__body__message__message_image' />
+                            <span className='chat__body__message__message__timestamp'>{new Date(e['time'] * 1000).toString()}</span>
+                            </p> 
+                            </div>
+                            )
+                        }
+                    
+                })}
+                
+                
                 {showPicker&&<Picker className='chat__body__emoji-picker'
                 onEmojiClick={onEmojiClick}
                 disableAutoFocus={true}
@@ -176,7 +257,7 @@ export default function Chat() {
                 <InsertEmoticonIcon onClick={() => setShowPicker(!showPicker)} />
                 <form className='chat__input__input-form'>
                     <input type='text' className='chat__input__input-form__input' value={message} onChange={(e) => handleChange(e)}/>
-                    <SendIcon />
+                    <SendIcon onClick={() => sendMessage()} />
                 </form>
                 <MicIcon onClick={() => setShowRecorder(!showRecorder)} />
             </div>

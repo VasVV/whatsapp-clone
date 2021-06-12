@@ -7,10 +7,16 @@ import {db} from './firebase';
 
 import {useEffect, useState } from 'react';
 
+import { useStateValue } from './stateProvider';
+
+
 export default function Sidebar() {
 
     const [rooms, setRooms] = useState([]);
 
+    const [{user}, dispatch] = useStateValue();
+
+    console.log(user);
     const updateRooms = async () => {
        await db
         .collection('rooms')
@@ -29,7 +35,7 @@ export default function Sidebar() {
     return (
         <div className='sidebar'>
             <div className='sidebar__header'>
-                <Avatar src='' />
+                <Avatar src={user.photoURL} />
                 <SettingsIcon />
             </div>
 

@@ -46,7 +46,6 @@ export default function SidebarChat({
               <Avatar src='' />
               <div className='sidebar-chat__info'>
                   <h2>{roomName}</h2>
-                  <p>Last message...</p>
               </div>
           </div>
         </Link>

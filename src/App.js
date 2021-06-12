@@ -2,7 +2,7 @@ import logo from './logo.svg';
 import './App.css';
 import Chat from './chat';
 import Sidebar from './sidebar';
-import {useState} from 'react';
+import React, {useState, useContext, useEffect} from 'react';
 import {
   BrowserRouter as Router,
   Switch,
@@ -10,17 +10,29 @@ import {
   Link
 } from "react-router-dom";
 import SidebarChat from './sidebarchat';
+import Login from './login';
+import userContext from './userContext';
+import { useStateValue } from './stateProvider';
+
+
 
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [{user}, dispatch] = useStateValue()
+  
 
+  
 
 
   return (
+    
     <div className="app">
       
-      <div className='app__body'>
+      {
+        !user? (
+          <Login />
+        ) : (
+          <div className='app__body'>
       
         <Router>
         <Sidebar />
@@ -31,7 +43,12 @@ function App() {
        </Switch>
        </Router>
       </div>
+        )
+      }
+      
+     
     </div>
+    
   );
 }
 
